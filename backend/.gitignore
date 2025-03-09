@@ -3,7 +3,9 @@
 
 # VENV
 /.venv/
+/__pycache__/
 
 # env
 /.env
 /config.py
+
