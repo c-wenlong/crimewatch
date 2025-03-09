@@ -2,6 +2,7 @@ import streamlit as st
 from utils import get_database_connection
 import json
 from datetime import datetime
+import requests
 
 st.set_page_config(
     page_title="Case Assistant | Case Management System",
@@ -9,18 +10,32 @@ st.set_page_config(
     layout="wide"
 )
 
+def get_all_cases():
+    """Fetch all cases from the database"""
+    response = requests.get("http://localhost:5000/cases/all")
+    return response.json()
+
+def get_selected_case(case_id):
+    """Fetch all cases from the database"""
+    try:
+        response = requests.get(f"http://localhost:5000/cases/caseID/{case_id}")
+        return response.json()
+    except Exception as e:
+        st.error(f"Error loading case: {e}")
+        return None
+
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def get_case_context(case_id):
     """Get relevant information about a case to provide context for the chatbot"""
-    db = get_database_connection()
-    if not db:
-        return "Database connection failed."
+    # db = get_database_connection()
+    # if not db:
+    #     return "Database connection failed."
     
     try:
-        case = db.test_case.find_one({"case_id": case_id})
+        case = get_selected_case(case_id)
         if not case:
             return f"No information found for case {case_id}."
         
@@ -28,12 +43,11 @@ def get_case_context(case_id):
         context = {
             "case_id": case["case_id"],
             "title": case["title"],
-            "type": case["type"],
+            "type": case["type_of_crime"],
             "status": case["status"],
             "description": case["description"],
-            "date_opened": case["date_opened"],
-            "location": case["location"],
-            "lead_detective": case["lead_detective"]
+            "date_opened": case["reported_datetime"],
+            "location": case["reported_location"],
         }
         
         return context
@@ -95,12 +109,11 @@ def show_chatbot():
     
     # Allow manual case selection
     all_cases = []
-    db = get_database_connection()
-    if db:
-        try:
-            all_cases = list(db.test_case.find({}, {"case_id": 1, "title": 1}))
-        except Exception as e:
-            st.error(f"Error loading cases: {e}")
+    
+    try:
+        all_cases = get_all_cases()
+    except Exception as e:
+        st.error(f"Error loading cases: {e}")
     
     case_options = {case["case_id"]: f"{case['case_id']} - {case['title']}" for case in all_cases}
     
