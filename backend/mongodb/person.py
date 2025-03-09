@@ -14,6 +14,11 @@ def create_person():
     return jsonify({"person_id": str(person_id)}), 201
 
 
+@person_routes.route("/test", methods=["GET"])
+def test_person():
+    return "this is a test for the person route"
+
+
 # Read Person by ID
 @person_routes.route("/<person_id>", methods=["GET"])
 def get_person(person_id):
