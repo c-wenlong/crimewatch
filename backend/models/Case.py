@@ -27,7 +27,6 @@ class Case:
         evidence,
         event_ids,
         status,
-
     ):
         self.case_id = case_id
         self.title = title
@@ -40,6 +39,11 @@ class Case:
         self.evidence = evidence
         self.event_ids = event_ids
         self.status = status
+
+        # Ensure case_id is unique
+        self.initialize()
+        if self.case_collection.find_one({"case_id": case_id}):
+            raise ValueError(f"Case with case_id {case_id} already exists.")
 
     def save(self):
         case = {
