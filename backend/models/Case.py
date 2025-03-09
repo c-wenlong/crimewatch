@@ -16,6 +16,7 @@ class Case:
 
     def __init__(
         self,
+        case_id,
         title,
         description,
         type_of_crime,
@@ -25,7 +26,10 @@ class Case:
         people_involved,
         evidence,
         event_ids,
+        status,
+
     ):
+        self.case_id = case_id
         self.title = title
         self.description = description
         self.type_of_crime = type_of_crime
@@ -35,9 +39,11 @@ class Case:
         self.people_involved = people_involved
         self.evidence = evidence
         self.event_ids = event_ids
+        self.status = status
 
     def save(self):
         case = {
+            "case_id": self.case_id,
             "title": self.title,
             "description": self.description,
             "type_of_crime": self.type_of_crime,
@@ -47,6 +53,7 @@ class Case:
             "people_involved": self.people_involved,
             "evidence": self.evidence,
             "event_ids": self.event_ids,
+            "status": self.status,
         }
         self.initialize()
         result = self.case_collection.insert_one(case)
