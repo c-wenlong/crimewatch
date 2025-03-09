@@ -78,6 +78,16 @@ class Case:
         except Exception as e:
             print(e)
             return None
+        
+    @classmethod
+    def find_by_case_id(cls, case_id):
+        cls.initialize()
+        try:
+            # Add a return statement here to return the found document
+            return cls.case_collection.find_one({"case_id": case_id})
+        except Exception as e:
+            print(e)
+            return None
 
     @classmethod
     def delete(cls, case_id):

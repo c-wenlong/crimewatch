@@ -45,6 +45,16 @@ def get_case(case_id):
     json_case = json.loads(json_util.dumps(case))
     return jsonify(json_case), 200
 
+# Read Case by Case ID
+@case_routes.route("/caseID/<case_id>", methods=["GET"])
+def get_case_by_case_id(case_id):
+    case = Case.find_by_case_id(case_id)
+    if case is None:
+        return jsonify({"error": "Case not found"}), 404
+
+    # Convert MongoDB object to JSON-serializable format
+    json_case = json.loads(json_util.dumps(case))
+    return jsonify(json_case), 200
 
 # Delete Case by ID
 @case_routes.route("/<case_id>", methods=["DELETE"])
