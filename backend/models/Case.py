@@ -1,8 +1,6 @@
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 
-mongo = PyMongo()
-
 
 class Case:
     case_collection = None  # Initially None
@@ -39,7 +37,6 @@ class Case:
         self.event_ids = event_ids
 
     def save(self):
-        self.initialize()
         case = {
             "title": self.title,
             "description": self.description,
@@ -68,7 +65,6 @@ class Case:
     @classmethod
     def find_by_id(cls, case_id):
         cls.initialize()
-        print("case_id:", case_id)
         try:
             # Add a return statement here to return the found document
             return cls.case_collection.find_one({"_id": ObjectId(case_id)})
@@ -81,6 +77,18 @@ class Case:
         cls.initialize()
         try:
             result = cls.case_collection.delete_one({"_id": ObjectId(case_id)})
+            return result
+        except Exception as e:
+            print(e)
+            return None
+
+    @classmethod
+    def update(cls, case_id, data):
+        cls.initialize()
+        try:
+            result = cls.case_collection.update_one(
+                {"_id": ObjectId(case_id)}, {"$set": data}
+            )
             return result
         except Exception as e:
             print(e)

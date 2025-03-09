@@ -16,12 +16,13 @@ def create_case():
     return jsonify({"case_id": str(case_id)}), 201
 
 
-# Create Case
+# Test Case Route
 @case_routes.route("/test", methods=["GET"])
 def test_case():
     return "this is a test for the case route"
 
 
+# Get all Cases
 @case_routes.route("/all", methods=["GET"])
 def get_all_cases():
     cases = Case.find_all()
@@ -52,4 +53,15 @@ def delete_case(case_id):
 
     if result.deleted_count > 0:
         return jsonify({"message": "Case deleted"}), 200
+    return jsonify({"error": "Case not found"}), 404
+
+
+# Update Case by ID
+@case_routes.route("/<case_id>", methods=["PUT"])
+def update_case(case_id):
+    data = request.json
+    result = Case.update(case_id, data)
+
+    if result.modified_count > 0:
+        return jsonify({"message": "Case updated"}), 200
     return jsonify({"error": "Case not found"}), 404
