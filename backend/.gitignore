@@ -1,0 +1,9 @@
+# Dev
+/sandbox/
+
+# VENV
+/.venv/
+
+# env
+/.env
+/config.py
