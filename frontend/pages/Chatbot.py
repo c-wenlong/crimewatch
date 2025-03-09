@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.db_connector import get_database_connection
+from utils import get_database_connection
 import json
 from datetime import datetime
 
