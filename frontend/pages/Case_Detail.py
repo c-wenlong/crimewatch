@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from utils.db_connector import get_database_connection
+import requests
 
 st.set_page_config(
     page_title="Case Details | Case Management System",
@@ -8,18 +9,27 @@ st.set_page_config(
     layout="wide"
 )
 
-def get_case_details(case_id):
-    """Fetch case details from the database"""
-    db = get_database_connection()
-    if not db:
-        st.error("Database connection failed")
-        return None
-    
+def get_all_cases():
+    """Fetch all cases from the database"""
+    response = requests.get("http://localhost:5000/cases/all")
+    return response.json()
+
+def get_selected_case(case_id):
+    """Fetch all cases from the database"""
     try:
-        case = db.test_case.find_one({"case_id": case_id})
-        return case
+        response = requests.get(f"http://localhost:5000/cases/caseID/{case_id}")
+        return response.json()
     except Exception as e:
-        st.error(f"Error retrieving case details: {e}")
+        st.error(f"Error loading case: {e}")
+        return None
+
+def get_person(person_id):
+    """Fetch person details from the database"""
+    try:
+        response = requests.get(f"http://localhost:5000/people/{person_id}")
+        return response.json()
+    except Exception as e:
+        st.error(f"Error loading person: {e}")
         return None
 
 def show_case_detail():
@@ -30,12 +40,11 @@ def show_case_detail():
     
     # Also offer manual case selection
     all_cases = []
-    db = get_database_connection()
-    if db:
-        try:
-            all_cases = list(db.test_case.find({}, {"case_id": 1, "title": 1}))
-        except Exception as e:
-            st.error(f"Error loading cases: {e}")
+
+    try:
+        all_cases = get_all_cases()
+    except Exception as e:
+        st.error(f"Error loading cases: {e}")
     
     case_options = {case["case_id"]: f"{case['case_id']} - {case['title']}" for case in all_cases}
     
@@ -50,7 +59,7 @@ def show_case_detail():
     st.session_state.selected_case = selected_case_id
     
     # Get case details
-    case = get_case_details(selected_case_id)
+    case = get_selected_case(selected_case_id)
     
     if not case:
         st.warning("No case selected or case not found.")
@@ -60,18 +69,16 @@ def show_case_detail():
     st.header(case['title'])
     
     # Create columns for basic info
+    st.info(f"**Status:** {case['status']}")
     col1, col2 = st.columns(2)
     with col1:
-        st.info(f"**Status:** {case['status']}")
+        # st.info(f"**Status:** {case['status']}")
         st.write(f"**Case ID:** {case['case_id']}")
-        st.write(f"**Date Opened:** {case['date_opened']}")
-        st.write(f"**Lead Detective:** {case['lead_detective']}")
+        st.write(f"**Reported Date:** {case['reported_datetime']}")
     
     with col2:
-        st.write(f"**Type:** {case['type']}")
-        st.write(f"**Location:** {case['location']}")
-        if "date_closed" in case and case["date_closed"]:
-            st.write(f"**Date Closed:** {case['date_closed']}")
+        st.write(f"**Type:** {case['type_of_crime']}")
+        st.write(f"**Reported Location:** {case['reported_location']}")
     
     # Display description
     st.subheader("Case Description")
@@ -84,12 +91,13 @@ def show_case_detail():
         st.dataframe(evidence_df)
     
     # Display suspects if available
-    if "suspects" in case and case["suspects"]:
-        st.subheader("Suspects")
-        for i, suspect in enumerate(case["suspects"]):
-            with st.expander(f"Suspect {i+1}: {suspect.get('name', 'Unknown')}"):
-                for key, value in suspect.items():
-                    if key != "name":
+    if "people_involved" in case and case["people_involved"]:
+        st.subheader("People Involved")
+        for i, person_id in enumerate(case["people_involved"]):
+            person = get_person(person_id)
+            with st.expander(f"Person {i+1}: {person.get('name', 'Unknown')} ({person.get('role_in_case', 'Role Unknown')})"):
+                for key, value in person.items():
+                    if key != "name" and key != "_id":
                         st.write(f"**{key.replace('_', ' ').title()}:** {value}")
     
     # Add case actions
