@@ -81,7 +81,7 @@ class Case:
         except Exception as e:
             print(e)
             return None
-        
+
     @classmethod
     def find_by_case_id(cls, case_id):
         cls.initialize()
