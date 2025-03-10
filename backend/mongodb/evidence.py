@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from models import Evidence
 import json
 from bson import json_util
@@ -113,7 +113,7 @@ def get_all_persons():
 
 
 # Read Evidence by ID
-@evidence_routes.route("/<person_id>", methods=["GET"])
+@evidence_routes.route("/<evidence_id>", methods=["GET"])
 def get_evidence(evidence_id):
     evidence = Evidence.find_by_id(evidence_id)
     if evidence is None:
@@ -122,6 +122,22 @@ def get_evidence(evidence_id):
     # Convert MongoDB object to JSON-serializable format
     json_evidence = json.loads(json_util.dumps(evidence))
     return jsonify(json_evidence), 200
+
+# Download Evidence
+@evidence_routes.route("/download/<evidence_id>", methods=["GET"])
+def download_evidence(evidence_id):
+    try:
+        evidence = Evidence.find_by_id(evidence_id)
+        if evidence is not None:
+            # Extract the binary data from the "file" field
+            file_binary = evidence["file"]
+            
+            return send_file(io.BytesIO(file_binary), mimetype='application/octet-stream', download_name=evidence["filename"])
+        else:
+            return "Evidence document not found", 404
+    except Exception as e:
+        print(e)
+        return str(e), 500
 
 
 # Delete Evidence by ID
@@ -136,7 +152,7 @@ def delete_evidence(evidence_id):
 
 # Update Evidence by ID
 @evidence_routes.route("/<evidence_id>", methods=["PUT"])
-def update_person(evidence_id):
+def update_evidence(evidence_id):
     data = request.json
     result = Evidence.update(evidence_id, data)
 
