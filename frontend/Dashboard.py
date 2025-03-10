@@ -45,8 +45,17 @@ def show_dashboard(df):
         st.warning("No cases found in the database.")
         return
     
+    # Convert and format columns
+    df['reported_datetime'] = pd.to_datetime(df['reported_datetime']).dt.strftime('%Y-%m-%d %H:%M:%S')
+    df['people_involved'] = df['people_involved'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+    df['evidence'] = df['evidence'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+    df['event_ids'] = df['event_ids'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+    
     # Filter columns for dashboard view
-    df_dashboard = df[['_id', 'case_id', 'title', 'type_of_crime', 'status', 'reported_datetime', 'reported_location']]
+    df_dashboard = df[['_id', 'case_id', 'title', 'status', 'type_of_crime',
+                       'reported_datetime', 'reported_location', 'description',
+                       'investigator_id', 'people_involved', 'evidence',
+                       'event_ids']]
     
     # Build grid options with AgGrid
     gb = GridOptionsBuilder.from_dataframe(df_dashboard)
@@ -54,18 +63,24 @@ def show_dashboard(df):
     gb.configure_grid_options(domLayout='normal')
     gb.configure_pagination(paginationAutoPageSize=True)
     gb.configure_side_bar()
+
     gb.configure_column("_id", hide=True)
-    gb.configure_column("case_id", headerName="Case ID")
-    gb.configure_column("title", headerName="Case Title")
-    gb.configure_column("type_of_crime", headerName="Type")
+    gb.configure_column("case_id", headerName="Case ID", tooltipField="case_id")
+    gb.configure_column("title", headerName="Case Title", tooltipField="title")
     gb.configure_column("status", header_name="Status", cellStyle={"styleConditions": [
         {"condition": "params.value == 'Active'", "style": {"color": "red"}},
         {"condition": "params.value == 'Solved'", "style": {"color": "green"}},
         {"condition": "params.value == 'Archived'", "style": {"color": "gray"}},
-    ]})
-    gb.configure_column("reported_datetime", headerName="Date Opened")
-    gb.configure_column("reported_location", headerName="Location")
-    
+    ]}, tooltipField="status")
+    gb.configure_column("type_of_crime", headerName="Type", tooltipField="type_of_crime")
+    gb.configure_column("reported_datetime", headerName="Date Opened", tooltipField="reported_datetime")
+    gb.configure_column("reported_location", headerName="Location", tooltipField="reported_location")
+    gb.configure_column("description", header_name="Description", tooltipField="description")
+    gb.configure_column("investigator_id", headerName="Investigator ID", tooltipField="investigator_id")
+    gb.configure_column("people_involved", headerName="People Involved", tooltipField="people_involved")
+    gb.configure_column("evidence", headerName="Evidence", tooltipField="evidence")
+    gb.configure_column("event_ids", headerName="Events IDs", tooltipField="event_ids")
+
     grid_options = gb.build()
     
     # Display filter options
@@ -82,7 +97,7 @@ def show_dashboard(df):
     if filter_status:
         filtered_df = filtered_df[filtered_df["status"].isin(filter_status)]
     if filter_type:
-        filtered_df = filtered_df[filtered_df["type"].isin(filter_type)]
+        filtered_df = filtered_df[filtered_df["type_of_crime"].isin(filter_type)]
     if search_query:
         filtered_df = filtered_df[filtered_df["title"].str.contains(search_query, case=False)]
     
