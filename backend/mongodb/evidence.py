@@ -85,8 +85,9 @@ def upload_file():
             except Exception as e:
                 print(f"Error processing {files}: {e}", flush=True)
             evidence = Evidence(filename, description, extracted_content, file)
-            evidence.save()
-            return jsonify({"message": "Text extracted and stored successfully"}), 201
+            inserted_id = evidence.save()  # This returns the ObjectId directly
+            return jsonify({"evidence_id": str(inserted_id),
+                            "message": "Text extracted and stored successfully"}), 201
         else:
             return jsonify({"error": "File type is not allowed"}), 400
     else:
