@@ -5,6 +5,8 @@ from bson import json_util
 from werkzeug.utils import secure_filename
 import docx
 import io
+import pypdf
+from pypdf import PdfReader
 
 ALLOWED_EXTENSIONS = {"txt", "pdf", "docx"}
 
@@ -17,7 +19,6 @@ def allowed_file(filename):
 
 
 def extract_text_from_file(file: bytes, type: str):
-    print("type", type, flush=True)
     try:
         if type == "txt":
             return file.decode()
@@ -28,6 +29,24 @@ def extract_text_from_file(file: bytes, type: str):
                 print("paragraph", paragraph, flush=True)
                 text += paragraph.text + " "
             return text
+        elif type == "pdf":
+            try:
+                p = PdfReader(io.BytesIO(file))
+            except Exception as e:
+                print("Error reading pdf", e, flush=True)
+            # Initialize an empty string to store the extracted text
+            extracted_text = ""
+            # Iterate through each page in the PDF
+            for page_num in range(len(p.pages)):
+                # Extract the text from the current page
+                text = p.pages[page_num].extract_text()
+
+                # Append the extracted text to our main string
+                extracted_text += text
+
+            # Close the PDF file
+            p.close()
+            return extracted_text
     except Exception as e:
         print("Error extracting filecontents", e)
         return None
@@ -47,46 +66,32 @@ def upload_file():
         if not files or not files.filename:
             print(files)
             return jsonify({"error": "No selected file"}), 400
-        
+
         if allowed_file(files.filename):
-            print("files", files, flush=True)
             filename = secure_filename(files.filename)
-            print("filename", filename, flush=True)
-            description = request.form.get('description')
+            description = request.form.get("description")
             file = files.read()
-            print("file read", file, flush=True)
             extracted_content = ""
             try:
-                if filename.endswith('.txt') or filename.endswith('.docx'):
+                if (
+                    filename.endswith(".txt")
+                    or filename.endswith(".docx")
+                    or filename.endswith(".pdf")
+                ):
                     print("matches", filename, flush=True)
-                    extracted_content = extract_text_from_file(file, filename.rsplit(".", 1)[1])
+                    extracted_content = extract_text_from_file(
+                        file, filename.rsplit(".", 1)[1]
+                    )
             except Exception as e:
                 print(f"Error processing {files}: {e}", flush=True)
-            # for file in files:
-            #     try:
-            #         if filename.endswith('.txt'):
-            #             extracted_content += extract_text_from_file(file) + "\n"
-            #         elif filename.endswith('.docx'):
-            #             extracted_content += extract_text_from_file(file)
-            #     except Exception as e:
-            #         print(f"Error processing {file}: {e}", flush=True)
-            #         print("error files", files, flush=True)
-            #         print("error file", file, flush=True)
-            print("extracted_content", extracted_content, flush=True)
             evidence = Evidence(filename, description, extracted_content, file)
             evidence.save()
-            return jsonify({'message': 'Text extracted and stored successfully'}), 201
+            return jsonify({"message": "Text extracted and stored successfully"}), 201
         else:
             return jsonify({"error": "File type is not allowed"}), 400
     else:
         return jsonify({"error": "Method not allowed"}), 405
 
-
-# def create_evidence():
-#     data = request.json
-#     person = Person(**data)
-#     person_id = person.save()
-#     return jsonify({"person_id": str(person_id)}), 201
 
 
 # Test Evidence Route
