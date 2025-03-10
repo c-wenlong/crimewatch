@@ -36,3 +36,8 @@ def get_event_collection():
     EVENT_COLLECTION = os.getenv("EVENT_COLLECTION")
     event_collection = database[EVENT_COLLECTION]
     return event_collection
+
+def get_evidence_collection():
+    EVIDENCE_COLLECTION = os.getenv("EVIDENCE_COLLECTION")
+    evidence_collection = database[EVIDENCE_COLLECTION]
+    return evidence_collection
