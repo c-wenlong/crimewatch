@@ -28,9 +28,8 @@ def upsert_case(case_id):
     return jsonify({"case_id": str(case_id)}), 201
 
 # Query Case
-@pinecone_case_routes.route("/<case_id>", methods=["GET"])
-def query_case(case_id):
-    query = PINECONE_NAMESPACE + " " + case_id
+@pinecone_case_routes.route("/<query>", methods=["GET"])
+def query_case(query):
     response = query_namespace(PINECONE_NAMESPACE, query)
     return jsonify({"results": response['result']['hits']}), 200
 

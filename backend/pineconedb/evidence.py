@@ -27,9 +27,8 @@ def upsert_evidence(evidence_id):
     return jsonify({"evidence_id": str(evidence_id)}), 201
 
 # Query Evidence
-@pinecone_evidence_routes.route("/<evidence_id>", methods=["GET"])
-def query_evidence(evidence_id):
-    query = PINECONE_NAMESPACE + " " + evidence_id
+@pinecone_evidence_routes.route("/<query>", methods=["GET"])
+def query_evidence(query):
     response = query_namespace(PINECONE_NAMESPACE, query)
     return jsonify({"results": response['result']['hits']}), 200
 

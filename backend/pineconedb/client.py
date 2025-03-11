@@ -21,7 +21,7 @@ def query_namespace(namespace, query):
     results = index.search(
     namespace=namespace,
     query={
-            "top_k": 50,
+            "top_k": 5,
             "inputs": {
                 'text': query
             }

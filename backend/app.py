@@ -16,6 +16,7 @@ from pineconedb import pinecone_case_routes
 from pineconedb import pinecone_event_routes
 from pineconedb import pinecone_person_routes
 from pineconedb import pinecone_evidence_routes
+from chatgpt import chatgpt_routes
 
 # Register the routes for each entity
 app.register_blueprint(person_routes, url_prefix="/people")
@@ -27,6 +28,9 @@ app.register_blueprint(pinecone_case_routes, url_prefix="/pinecone_cases")
 app.register_blueprint(pinecone_event_routes, url_prefix="/pinecone_event")
 app.register_blueprint(pinecone_person_routes, url_prefix="/pinecone_person")
 app.register_blueprint(pinecone_evidence_routes, url_prefix="/pinecone_evidence")
+
+app.register_blueprint(chatgpt_routes, url_prefix="/chatgpt")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
