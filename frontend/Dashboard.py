@@ -3,10 +3,15 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.db_connector import get_database_connection
 import requests
+import dotenv
+import os
+
+dotenv.load_dotenv()
+LOCALHOST_URI = os.getenv("LOCALHOST_URI")
 
 def get_all_cases():
     """Fetch all cases from the database"""
-    response = requests.get("http://localhost:5000/cases/all")
+    response = requests.get(f"{LOCALHOST_URI}/cases/all")
     return pd.DataFrame(response.json())
 
 st.set_page_config(
@@ -19,22 +24,6 @@ st.set_page_config(
 # Initialize session state variables
 if "selected_case" not in st.session_state:
     st.session_state.selected_case = None
-
-# def load_cases():
-#     """Load all cases from database"""
-#     db = get_database_connection()
-#     if not db:
-#         st.warning("Unable to connect to database. Showing sample data.")
-#         # Return sample data or empty DataFrame
-#         return pd.DataFrame()
-    
-#     try:
-#         cases_cursor = db.test_case.find({})
-#         cases = list(cases_cursor)
-#         return pd.DataFrame(cases)
-#     except Exception as e:
-#         st.error(f"Error loading cases: {e}")
-#         return pd.DataFrame()
 
 def show_dashboard(df):
     st.title("📊 Case Dashboard")

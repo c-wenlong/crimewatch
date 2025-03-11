@@ -3,6 +3,11 @@ from utils import get_database_connection
 import json
 from datetime import datetime
 import requests
+import dotenv
+import os
+
+dotenv.load_dotenv()
+LOCALHOST_URI = os.getenv("LOCALHOST_URI")
 
 st.set_page_config(
     page_title="Case Assistant | Case Management System",
@@ -12,13 +17,13 @@ st.set_page_config(
 
 def get_all_cases():
     """Fetch all cases from the database"""
-    response = requests.get("http://localhost:5000/cases/all")
+    response = requests.get(f"{LOCALHOST_URI}/cases/all")
     return response.json()
 
 def get_selected_case(case_id):
     """Fetch all cases from the database"""
     try:
-        response = requests.get(f"http://localhost:5000/cases/caseID/{case_id}")
+        response = requests.get(f"{LOCALHOST_URI}/cases/caseID/{case_id}")
         return response.json()
     except Exception as e:
         st.error(f"Error loading case: {e}")

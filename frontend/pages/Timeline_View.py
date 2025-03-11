@@ -4,6 +4,11 @@ import plotly.express as px
 import requests
 from datetime import datetime
 from utils.db_connector import get_database_connection
+import dotenv
+import os
+
+dotenv.load_dotenv()
+LOCALHOST_URI = os.getenv("LOCALHOST_URI")
 
 st.set_page_config(
     page_title="Timeline View | Case Management System",
@@ -25,7 +30,7 @@ def load_case_events(case_id):
         event_ids = case["event_ids"]
         events = []
         for event_id in event_ids:
-            url = f"http://localhost:5000/events/{event_id}"
+            url = f"{LOCALHOST_URI}/events/{event_id}"
             resp = requests.get(url)
             if resp.status_code == 200:
                 # Assuming the returned event follows the API docs: it contains fields like 'title', 'description', 'datetime', etc.
@@ -44,7 +49,7 @@ def load_case_events(case_id):
 def load_people():
     """Load all people from the backend"""
     try:
-        url = "http://127.0.0.1:5000/people/all"
+        url = f"{LOCALHOST_URI}/people/all"
         resp = requests.get(url)
         if resp.status_code == 200:
             return resp.json()
@@ -168,7 +173,7 @@ def show_timeline():
                 "reported_by": reported_by
             }
             print(new_event)
-            response = requests.post("http://localhost:5000/events/", json=new_event)
+            response = requests.post(f"{LOCALHOST_URI}/events/", json=new_event)
             if response.status_code == 201:
                 # Get the newly created event's _id
                 new_event_data = response.json()
@@ -180,7 +185,7 @@ def show_timeline():
                 else:
                     # Send an update request to add the event id to the case's event_ids array.
                     # Here we remove the extra "update" key and send the "$push" operator directly.
-                    update_case_url = f"http://localhost:5000/cases/{internal_case_id}"
+                    update_case_url = f"{LOCALHOST_URI}/cases/{internal_case_id}"
                     update_payload = {
                         "$push": { "event_ids": new_event_id }
                     }
