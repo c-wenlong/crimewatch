@@ -107,6 +107,7 @@ def main():
     st.sidebar.info("""
     Use the pages in the sidebar to navigate between different views:
     - Dashboard (Home)
+    - Add Case/Person
     - Case Details
     - Chatbot
     - Timeline View

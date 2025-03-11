@@ -2,22 +2,39 @@ import streamlit as st
 import requests
 from datetime import datetime, time
 import pytz
+import dotenv
+import os
+
+dotenv.load_dotenv()
+LOCALHOST_URI = os.getenv("LOCALHOST_URI")
 
 def create_case(case_data):
     """Send a POST request to create a new case"""
-    response = requests.post("http://localhost:5000/cases/", json=case_data)
+    response = requests.post(f"{LOCALHOST_URI}/cases/", json=case_data)
     return response
 
-st.set_page_config(
-    page_title="Add New Case", 
-    page_icon="📝", 
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+def create_person(person_data):
+    """Send a POST request to create a new person"""
+    response = requests.post(f"{LOCALHOST_URI}/people/", json=person_data)
+    return response
 
-def main():
-    st.title("📝 Add New Case")
+def get_all_people():
+    """Fetch all people from the database"""
+    response = requests.get(f"{LOCALHOST_URI}/people/all")
+    return response.json()
+
+def add_case():
+    """Add a new case to the database"""
+    st.header("Add New Case")
     st.write("Use the form below to add a new case.")
+
+    # Fetch all Investigator for the Investigator ID dropdown
+    people = get_all_people()
+    investigator_options = {
+        person["_id"]["$oid"]: f"{person['_id']['$oid']} - {person['name']}"
+        for person in people
+        if person.get("role_in_case") == "Investigator"  
+    }
 
     with st.form("case_form"):
         # Input fields
@@ -38,13 +55,12 @@ def main():
         with col4:
             reported_time_second = st.number_input("Reported Second", min_value=0, max_value=59, value=0)
         
-        investigator_id = st.text_input("Investigator ID")
+        investigator_id = st.selectbox(
+            "Investigator ID",
+            options=list(investigator_options.keys()),
+            format_func=lambda x: investigator_options[x]
+        )
         status = st.selectbox("Status", ["Active", "Solved", "Archived"])
-        
-        st.write("### Additional Information")
-        people_involved = st.text_area("People Involved (comma-separated)")
-        evidence = st.text_area("Evidence (comma-separated)", placeholder="Graffiti paint cans, CCTV footage from City Hall")
-        event_ids = st.text_area("Event IDs (comma-separated)")
         
         # Submit button
         submitted = st.form_submit_button("Add Case")
@@ -62,6 +78,22 @@ def main():
             # Format the datetime
             formatted_datetime = reported_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
 
+            # Validation
+            required_fields = {
+                "Case ID": case_id,
+                "Title": title,
+                "Description": description,
+                "Type of Crime": type_of_crime,
+                "Reported Location": reported_location,
+            }
+
+            missing_fields = [field for field, value in required_fields.items() if not value]
+
+            if missing_fields:
+                for field in missing_fields:
+                    st.error(f"{field} is required.")
+                return
+
             # Convert inputs to appropriate formats
             case_data = {
                 "case_id": case_id,
@@ -72,9 +104,9 @@ def main():
                 "reported_datetime": formatted_datetime, # formatted
                 "investigator_id": investigator_id,
                 "status": status,
-                "people_involved": [x.strip() for x in people_involved.split(",")] if people_involved else [],
-                "evidence": [x.strip() for x in evidence.split(",")] if evidence else [],
-                "event_ids": [x.strip() for x in event_ids.split(",")] if event_ids else [],
+                "people_involved": [],
+                "evidence": [],
+                "event_ids": [],
             }
 
             # Insert data into MongoDB
@@ -86,6 +118,74 @@ def main():
                     st.error(f"Failed to add case. Server returned: {response.status_code}")
             except Exception as e:
                 st.error(f"Error while adding case: {e}")
+
+def add_person():
+    """Add a new person to the database"""
+    st.header("Add New Person")
+    st.write("Use the form below to add a new person.")
+
+    with st.form("person_form"):
+        # Input fields
+        name = st.text_input("Name", placeholder="John Doe")
+        age = st.number_input("Age", min_value=0, max_value=120, value=35)
+        gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+        known_addresses = st.text_area("Known Addresses", placeholder="Stockholm, Sweden")
+        role_in_case = st.text_input("Role in Case", placeholder="Witness", help="E.g., Witness, Suspect, Investigator, Victim, etc.")
+        
+        # Submit button
+        submitted = st.form_submit_button("Add Person")
+
+        # Process form submission
+        if submitted:
+            # Validation
+            required_fields = {
+                "Name": name,
+                "Known Addresses": known_addresses,
+                "Role in Case": role_in_case,
+            }
+
+            missing_fields = [field for field, value in required_fields.items() if not value]
+
+            if missing_fields:
+                for field in missing_fields:
+                    st.error(f"{field} is required.")
+                return
+
+            # Convert inputs to appropriate formats
+            person_data = {
+                "name": name,
+                "age": age,
+                "gender": gender,
+                "known_addresses": known_addresses,
+                "role_in_case": role_in_case,
+            }
+
+            # Insert data into MongoDB
+            try:
+                response = create_person(person_data)
+                if response.status_code == 201:
+                    st.success("Person added successfully!")
+                else:
+                    st.error(f"Failed to add person. Server returned: {response.status_code}")
+            except Exception as e:
+                st.error(f"Error while adding person: {e}")
+
+st.set_page_config(
+    page_title="Add Case/People | Case Management System", 
+    page_icon="📝", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+def main():
+    st.title("📝 Case Management System")
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Add New Case", "Add New Person"])
+
+    if page == "Add New Case":
+        add_case()
+    elif page == "Add New Person":
+        add_person()
 
 # Run the app
 if __name__ == "__main__":
