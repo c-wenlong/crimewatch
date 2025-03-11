@@ -113,7 +113,9 @@ def show_timeline():
     df_events = pd.DataFrame(events)
 
     # Convert the 'occurred_at' column from ISO string to datetime
-    df_events["occurred_at"] = pd.to_datetime(df_events["occurred_at"], format="%Y-%m-%dT%H:%M:%SZ")
+    df_events["occurred_at"] = pd.to_datetime(df_events["occurred_at"])
+
+    df_events["reported_at"] = pd.to_datetime(df_events["reported_at"])
 
     # Create a new column 'x_end' that is the same for all events—the last occurred_at time
     max_occurred_at = df_events["occurred_at"].max()
@@ -143,7 +145,23 @@ def show_timeline():
     
     # Display events in a table
     st.subheader("Case Events")
-    st.dataframe(df_events, use_container_width=True)
+
+    # Load people data for name mapping
+    people_data = load_people()
+    people_dict = {person["_id"]["$oid"]: person["name"] for person in people_data}
+
+    # Format datetime and replace person_id with name
+    df_events["occurred_at"] = df_events["occurred_at"].dt.strftime("%d-%b-%y %H:%M")
+    df_events["reported_at"] = df_events["reported_at"].dt.strftime("%d-%b-%y %H:%M")
+    df_events["person_name"] = df_events["person_id"].map(people_dict)
+
+    # Drop unnecessary columns
+    df_events_display = df_events.drop(columns=["_id", "case_id", "event_start", "event_end", "person_id"], errors="ignore")
+
+    df_events_display = df_events_display.loc[:, ['event_type', 'person_name', 'description', 'location', 'occurred_at', 'reported_at', 'reported_by']]
+
+    # Display updated dataframe
+    st.dataframe(df_events_display, use_container_width=True)
 
     internal_case_id = df_events["case_id"].iloc[0]
 
