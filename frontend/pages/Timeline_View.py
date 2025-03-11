@@ -25,7 +25,7 @@ def load_case_events(case_id):
         event_ids = case["event_ids"]
         events = []
         for event_id in event_ids:
-            url = f"http://127.0.0.1:5000/events/{event_id}"
+            url = f"http://localhost:5000/events/{event_id}"
             resp = requests.get(url)
             if resp.status_code == 200:
                 # Assuming the returned event follows the API docs: it contains fields like 'title', 'description', 'datetime', etc.
@@ -39,6 +39,20 @@ def load_case_events(case_id):
         return events
     except Exception as e:
         st.error(f"Error loading case events: {e}")
+        return []
+
+def load_people():
+    """Load all people from the backend"""
+    try:
+        url = "http://127.0.0.1:5000/people/all"
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            st.warning("Failed to load people.")
+            return []
+    except Exception as e:
+        st.error(f"Error loading people: {e}")
         return []
 
 def show_timeline():
@@ -125,14 +139,63 @@ def show_timeline():
     # Display events in a table
     st.subheader("Case Events")
     st.dataframe(df_events, use_container_width=True)
-    
-    # Add new event
+
+    internal_case_id = df_events["case_id"].iloc[0]
+
     with st.expander("Add New Event"):
         event_date = st.date_input("Event Date")
+        event_time = st.time_input("Event time")
+        st.write("Occurrence event time is set for", event_time)
+        # event_time = st.time_input("Event Time", value=None)
         event_type = st.selectbox("Event Type", ["Interview", "Evidence Collection", "Arrest", "Witness Statement", "Other"])
         event_description = st.text_area("Event Description")
+        event_location = st.text_input("Event Location")
+        people = load_people()
+        person_options = {person["_id"]["$oid"]: f"{person['name']}" for person in people}
+        person_id = st.selectbox("Person ID", options=list(person_options.keys()), format_func=lambda x: person_options.get(x, x))
+        # person_id = st.text_input("Person ID")
+        reported_by = st.text_input("Reported By")
         if st.button("Add Event"):
-            st.info("Event addition functionality to be implemented")
+            occurred_at = datetime.combine(event_date, event_time).strftime("%Y-%m-%dT%H:%M:%SZ")
+            new_event = {
+                "case_id": internal_case_id,
+                "description": event_description,
+                "event_type": event_type,
+                "occurred_at": occurred_at,
+                "location": event_location,
+                "person_id": person_id,
+                "reported_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "reported_by": reported_by
+            }
+            print(new_event)
+            response = requests.post("http://localhost:5000/events/", json=new_event)
+            if response.status_code == 201:
+                # Get the newly created event's _id
+                new_event_data = response.json()
+                new_event_id = new_event_data.get("event_id")
+                print(new_event_id)
+                
+                if not new_event_id:
+                    st.error("Event created but no event_id was returned!")
+                else:
+                    # Send an update request to add the event id to the case's event_ids array.
+                    # Here we remove the extra "update" key and send the "$push" operator directly.
+                    update_case_url = f"http://localhost:5000/cases/{internal_case_id}"
+                    update_payload = {
+                        "$push": { "event_ids": new_event_id }
+                    }
+                    update_response = requests.put(update_case_url, json=update_payload)
+                    print("Update case response code:", update_response.status_code)
+                    print("Update case response text:", update_response.text)
+                    
+                    if update_response.status_code == 200:
+                        st.success("Event added and case updated successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Event added but failed to update case: {update_response.text}")
+            else:
+                st.error("Failed to add event.")
+
 
 if __name__ == "__main__":
     show_timeline()
