@@ -1,0 +1,39 @@
+services: 
+  flask_app:
+    build: ./backend
+    environment:
+      - FLASK_APP=app.py
+      - FLASKRun_HOST=localhost:6000
+      - MONGODB_URI=mongodb://root:example@mongo:27017
+      - DATABASE_NAME=crimewatch
+      - CASE_COLLECTION=cases
+      - PERSON_COLLECTION=people
+      - EVENT_COLLECTION=events
+      - EVIDENCE_COLLECTION=evidence
+    depends_on:
+      - mongo
+    ports:
+      - "6005:5000"
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

@@ -48,14 +48,12 @@ def show_dashboard(df):
     # Convert and format columns
     df['reported_datetime'] = pd.to_datetime(df['reported_datetime']).dt.strftime('%Y-%m-%d %H:%M:%S')
     df['people_involved'] = df['people_involved'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
-    df['evidence'] = df['evidence'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
     df['event_ids'] = df['event_ids'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
     
     # Filter columns for dashboard view
     df_dashboard = df[['_id', 'case_id', 'title', 'status', 'type_of_crime',
                        'reported_datetime', 'reported_location', 'description',
-                       'investigator_id', 'people_involved', 'evidence',
-                       'event_ids']]
+                       'investigator_id']]
     
     # Build grid options with AgGrid
     gb = GridOptionsBuilder.from_dataframe(df_dashboard)
@@ -77,9 +75,6 @@ def show_dashboard(df):
     gb.configure_column("reported_location", headerName="Location", tooltipField="reported_location")
     gb.configure_column("description", header_name="Description", tooltipField="description")
     gb.configure_column("investigator_id", headerName="Investigator ID", tooltipField="investigator_id")
-    gb.configure_column("people_involved", headerName="People Involved", tooltipField="people_involved")
-    gb.configure_column("evidence", headerName="Evidence", tooltipField="evidence")
-    gb.configure_column("event_ids", headerName="Events IDs", tooltipField="event_ids")
 
     grid_options = gb.build()
     
