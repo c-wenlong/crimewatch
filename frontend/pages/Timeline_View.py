@@ -16,25 +16,39 @@ st.set_page_config(
     layout="wide"
 )
 
+st.cache_data(ttl=120)
+def get_all_cases():
+    """Fetch all cases from the database"""
+    response = requests.get(f"{LOCALHOST_URI}/cases/all")
+    return response.json()
+
+def get_selected_case_events(case_id):
+    """Fetch all cases from the database"""
+    try:
+        response = requests.get(f"{LOCALHOST_URI}/cases/caseID/{case_id}")
+        return response.json().get("event_ids", [])
+    except Exception as e:
+        st.error(f"Error loading case: {e}")
+        return None
+
+def get_event(event_id):
+    """Fetch event details from the database"""
+    try:
+        response = requests.get(f"{LOCALHOST_URI}/events/{event_id}")
+        return response.json()
+    except Exception as e:
+        st.error(f"Error loading event: {e}")
+        return None
+
 def load_case_events(case_id):
     """Load all events for a specific case by querying the backend for each event_id"""
-    db = get_database_connection()
-    if not db:
-        return None
     
-    try:
-        case = db.cases.find_one({"case_id": case_id})
-        if not case or "event_ids" not in case:
-            return []
-        
-        event_ids = case["event_ids"]
+    try:    
+        event_ids = get_selected_case_events(case_id)
         events = []
         for event_id in event_ids:
-            url = f"{LOCALHOST_URI}/events/{event_id}"
-            resp = requests.get(url)
-            if resp.status_code == 200:
-                # Assuming the returned event follows the API docs: it contains fields like 'title', 'description', 'datetime', etc.
-                event_data = resp.json()
+            event_data = get_event(event_id)
+            if event_data:
                 events.append(event_data)
             else:
                 st.warning(f"Event {event_id} not found.")
@@ -67,13 +81,12 @@ def show_timeline():
     case_id = st.session_state.get("selected_case")
     
     # Allow manual case selection
-    db = get_database_connection()
     all_cases = []
-    if db:
-        try:
-            all_cases = list(db.test_case.find({}, {"case_id": 1, "title": 1}))
-        except Exception as e:
-            st.error(f"Error loading cases: {e}")
+
+    try:
+        all_cases = get_all_cases()
+    except Exception as e:
+        st.error(f"Error loading cases: {e}")
     
     if not all_cases:
         st.error("No cases available.")

@@ -35,9 +35,6 @@ if "messages" not in st.session_state:
 
 def get_case_context(case_id):
     """Get relevant information about a case to provide context for the chatbot"""
-    # db = get_database_connection()
-    # if not db:
-    #     return "Database connection failed."
     
     try:
         case = get_selected_case(case_id)

@@ -282,8 +282,8 @@ def show_case_detail():
                         st.rerun()
                     else:
                         st.error("Error updating case with new evidence.")
-            else:
-                st.error("Error uploading evidence.")
+            # else:
+            #     st.error("Error uploading evidence.")
 
     # You could also add an expander or additional tabs for "History", "Events", or "Notes".
     st.divider()
