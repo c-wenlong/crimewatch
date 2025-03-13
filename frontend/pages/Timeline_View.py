@@ -22,6 +22,7 @@ def get_all_cases():
     response = requests.get(f"{LOCALHOST_URI}/cases/all")
     return response.json()
 
+@st.cache_data(ttl=120)
 def get_selected_case_events(case_id):
     """Fetch all cases from the database"""
     try:
@@ -60,6 +61,7 @@ def load_case_events(case_id):
         st.error(f"Error loading case events: {e}")
         return []
 
+@st.cache_data(ttl=120)
 def load_people():
     """Load all people from the backend"""
     try:
@@ -115,10 +117,48 @@ def show_timeline():
         st.info("No timeline events found for this case.")
         with st.expander("Add New Event"):
             event_date = st.date_input("Event Date")
+            event_time = st.time_input("Event time")
             event_type = st.selectbox("Event Type", ["Interview", "Evidence Collection", "Arrest", "Witness Statement", "Other"])
             event_description = st.text_area("Event Description")
+            event_location = st.text_input("Event Location")
+            people = load_people()
+            person_options = {person["_id"]["$oid"]: f"{person['name']}" for person in people}
+            person_id = st.selectbox("Person ID", options=list(person_options.keys()) + [None], format_func=lambda x: person_options.get(x, x))
+            reported_by = st.text_input("Reported By")
+
             if st.button("Add Event"):
-                st.info("Event addition functionality to be implemented")
+                occurred_at = datetime.combine(event_date, event_time).strftime("%Y-%m-%dT%H:%M:%SZ")
+                new_event = {
+                    "case_id": selected_case_id,
+                    "description": event_description,
+                    "event_type": event_type,
+                    "occurred_at": occurred_at,
+                    "location": event_location,
+                    "person_id": person_id,
+                    "reported_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "reported_by": reported_by
+                }
+                response = requests.post(f"{LOCALHOST_URI}/events/", json=new_event)
+                if response.status_code == 201:
+                    new_event_data = response.json()
+                    new_event_id = new_event_data.get("event_id")
+                    if not new_event_id:
+                        st.error("Event created but no event_id was returned!")
+                    else:
+                        case_id = requests.get(f"{LOCALHOST_URI}/cases/caseID/{selected_case_id}").json().get("_id")['$oid']
+                        update_case_url = f"{LOCALHOST_URI}/cases/{case_id}"
+                        update_payload = {
+                            "$push": { "event_ids": new_event_id }
+                        }
+                        print(update_case_url, update_payload)
+                        update_response = requests.put(update_case_url, json=update_payload)
+                        if update_response.status_code == 200:
+                            st.success("Event added and case updated successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"Event added but failed to update case: {update_response.text}")
+                else:
+                    st.error("Failed to add event.")
         return
     
     # Convert to DataFrame for visualization.
@@ -188,7 +228,7 @@ def show_timeline():
         event_location = st.text_input("Event Location")
         people = load_people()
         person_options = {person["_id"]["$oid"]: f"{person['name']}" for person in people}
-        person_id = st.selectbox("Person ID", options=list(person_options.keys()), format_func=lambda x: person_options.get(x, x))
+        person_id = st.selectbox("Person ID", options=list(person_options.keys()) + ["None"], format_func=lambda x: person_options.get(x, x))
         # person_id = st.text_input("Person ID")
         reported_by = st.text_input("Reported By")
         if st.button("Add Event"):
@@ -216,7 +256,8 @@ def show_timeline():
                 else:
                     # Send an update request to add the event id to the case's event_ids array.
                     # Here we remove the extra "update" key and send the "$push" operator directly.
-                    update_case_url = f"{LOCALHOST_URI}/cases/{internal_case_id}"
+                    case_id = requests.get(f"{LOCALHOST_URI}/cases/caseID/{internal_case_id}").json().get("_id")['$oid']
+                    update_case_url = f"{LOCALHOST_URI}/cases/{case_id}"
                     update_payload = {
                         "$push": { "event_ids": new_event_id }
                     }
