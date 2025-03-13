@@ -6,6 +6,8 @@ import requests
 
 load_dotenv()
 
+APP_URI = os.getenv("APP_URI")
+
 try:
     OPENAI_API = os.getenv("OPENAI_API")
     print(OPENAI_API)
@@ -13,6 +15,7 @@ try:
 
 except Exception as e:
     raise Exception(f"🚨 Failed to connect to OpenAI: {e}")
+
 
 class KeywordsResponse(BaseModel):
     case_id: str
@@ -25,6 +28,7 @@ class KeywordsResponse(BaseModel):
     genders: list[str]
     addresses: list[str]
     type: str
+
 
 def get_keywords(user_prompt):
     generate_keywords_prompt = """
@@ -75,12 +79,13 @@ def get_keywords(user_prompt):
 def get_case_vectors(KeywordsResponse):
     query = f"{KeywordsResponse.case_id} {KeywordsResponse.case_title} {KeywordsResponse.description} {KeywordsResponse.type} {KeywordsResponse.location}"
 
-    cases = requests.get(f"http://localhost:5000/pinecone_cases/{query}")
+    cases = requests.get(f"{APP_URI}/pinecone_cases/{query}")
     return cases.json()
+
 
 def get_evidence_vectors(case_context, evidence_id):
     query = f"{evidence_id} {case_context['case_id']} {case_context['title']} {case_context['description']} {case_context['type']} {case_context['location']}"
-    evidence = requests.get(f"http://localhost:5000/pinecone_evidence/{query}")
+    evidence = requests.get(f"{APP_URI}/pinecone_evidence/{query}")
     return evidence.json()
 
 
@@ -104,7 +109,7 @@ def get_summary(user_input, relevant_information):
         messages=[
             {"role": "system", "content": generate_summary_prompt},
             {"role": "user", "content": user_prompt},
-        ]
+        ],
     )
 
     print(generate_summary_prompt)
