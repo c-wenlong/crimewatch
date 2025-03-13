@@ -243,13 +243,11 @@ def show_timeline():
                 "reported_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "reported_by": reported_by
             }
-            print(new_event)
             response = requests.post(f"{LOCALHOST_URI}/events/", json=new_event)
             if response.status_code == 201:
                 # Get the newly created event's _id
                 new_event_data = response.json()
                 new_event_id = new_event_data.get("event_id")
-                print(new_event_id)
                 
                 if not new_event_id:
                     st.error("Event created but no event_id was returned!")

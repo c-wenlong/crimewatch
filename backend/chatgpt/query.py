@@ -62,7 +62,6 @@ def handle_user_prompt():
     for evidence_id in evidence:
         evidence_vectors = get_evidence_vectors(case_context, evidence_id["$oid"])
         for vector in evidence_vectors["results"]:
-            print(vector)
             evidence_chunks.append(vector["fields"]["chunk_text"])
 
     enrichment_data = {

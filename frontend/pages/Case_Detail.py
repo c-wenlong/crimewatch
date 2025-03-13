@@ -274,7 +274,6 @@ def show_case_detail():
                     new_evidence = {"$oid": evidence_response['evidence_id']}
                     # Append to the evidence list
                     evidence_list.append(new_evidence)
-                    print(evidence_list)
                     # Update the case with the new evidence list
                     update_response = update_case(str(case["_id"]['$oid']), {"evidence": evidence_list})
                     if update_response.status_code == 200:

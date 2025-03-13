@@ -10,7 +10,6 @@ APP_URI = os.getenv("APP_URI")
 
 try:
     OPENAI_API = os.getenv("OPENAI_API")
-    print(OPENAI_API)
     openai_client = OpenAI(api_key=OPENAI_API)
 
 except Exception as e:
@@ -111,7 +110,5 @@ def get_summary(user_input, relevant_information):
             {"role": "user", "content": user_prompt},
         ],
     )
-
-    print(generate_summary_prompt)
 
     return completion.choices[0].message.content
