@@ -46,22 +46,26 @@ def handle_user_prompt():
     evidence = response_json["evidence"]
     events = []
     for event_id in event_ids:
-        event_response = requests.get(f"{APP_URI}/event/{event_id}")
+        event_response = requests.get(f"http://localhost:5000/events/{event_id}")
+
         event_response_json = event_response.json()
+        print(event_response_json)
+
         event = {
-            "event_type": event_response_json["event_type"],
-            "event_description": event_response_json["description"],
-            "event_location": event_response_json["location"],
-            "event_reported_by": event_response_json["reported_by"],
-            "event_occured_at": event_response_json["occured_at"],
-            "event_reported_at": event_response_json["reported_at"],
+            "event_type":event_response_json['event_type'],
+            "event_description":event_response_json['description'],
+            "event_location":event_response_json['location'],
+            "event_reported_by":event_response_json['reported_by'],
+            "event_occured_at":event_response_json['occurred_at'],
+            "event_reported_at":event_response_json['reported_at'],
         }
         events.append(event)
     evidence_chunks = []
     for evidence_id in evidence:
-        evidence_vectors = get_evidence_vectors(case_context, evidence_id["$oid"])
-        for vector in evidence_vectors["results"]:
-            evidence_chunks.append(vector["chunk_text"])
+        evidence_vectors = get_evidence_vectors(case_context, evidence_id['$oid'])
+        for vector in evidence_vectors['results']:
+            # print(vector)
+            evidence_chunks.append(vector['fields']['chunk_text'])
 
     enrichment_data = {
         "case_id": case_id,

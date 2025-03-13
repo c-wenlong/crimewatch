@@ -88,12 +88,15 @@ def get_summary(user_input, relevant_information):
     generate_summary_prompt = f"""
     You will be given a Crime Case related question and relevant information about the Case.
     Please form connections between the relevant information and provide answers about the Case using the relevant information.
+
     If there is no good answer, write "I'm not sure."
 
     The Relevant Information below is in JSON format and contains the case id, case title, case description, case type, case location, events and evidence related to the Crime Case.
 
     Relevant Information:
     {relevant_information}
+
+    Please quote from evidence if it can support the answer.
 
     """
 
