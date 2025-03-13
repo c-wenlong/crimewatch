@@ -78,9 +78,8 @@ def get_case_vectors(KeywordsResponse):
     cases = requests.get(f"http://localhost:5000/pinecone_cases/{query}")
     return cases.json()
 
-def get_evidence_vectors(KeywordsResponse, evidence_id):
-
-    query = f"{evidence_id} {KeywordsResponse.case_id} {KeywordsResponse.case_title} {KeywordsResponse.description} {KeywordsResponse.type} {KeywordsResponse.location}"
+def get_evidence_vectors(case_context, evidence_id):
+    query = f"{evidence_id} {case_context['case_id']} {case_context['title']} {case_context['description']} {case_context['type']} {case_context['location']}"
     evidence = requests.get(f"http://localhost:5000/pinecone_evidence/{query}")
     return evidence.json()
 

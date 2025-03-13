@@ -57,30 +57,17 @@ def get_case_context(case_id):
         return f"Error retrieving case information: {e}"
 
 def generate_response(prompt, case_context):
-    """
-    This is a placeholder for an actual AI response generator
-    In a real implementation, you would connect to an LLM API
-    """
-    
-    # Simple keyword-based response for demonstration
-    if "status" in prompt.lower():
-        return f"The current status of case {case_context['case_id']} is '{case_context['status']}'."
-    
-    elif "location" in prompt.lower():
-        return f"This case occurred in {case_context['location']}."
-    
-    elif "detective" in prompt.lower() or "lead" in prompt.lower():
-        return f"The lead detective for this case is {case_context['lead_detective']}."
-    
-    elif "description" in prompt.lower() or "about" in prompt.lower() or "summary" in prompt.lower():
-        return f"Case summary: {case_context['description']}"
-    
-    else:
-        return (
-            f"I'm the Case Assistant for case {case_context['case_id']} - {case_context['title']}. "
-            f"This is a {case_context['type']} case opened on {case_context['date_opened']}. "
-            f"You can ask me about case status, location, lead detective, or for a summary."
-        )
+    payload = {"user_prompt": prompt, "case_context": case_context}
+    try:
+        response = requests.post(f"{LOCALHOST_URI}/chatgpt/", json=payload)
+        print(response)
+        if response.ok:
+            return response.json().get("results")
+        else:
+            return "Error: Unable to get a response from the chatbot."
+    except Exception as e:
+        return f"Exception occurred: {e}"
+
 
 def save_chat_history(case_id, messages):
     """Save chat history to the database"""
