@@ -3,6 +3,11 @@ import pandas as pd
 from utils.db_connector import get_database_connection
 import requests
 import datetime
+import dotenv
+import os
+
+dotenv.load_dotenv()
+LOCALHOST_URI = os.getenv("LOCALHOST_URI")
 
 st.set_page_config(
     page_title="Case Details | Case Management System",
@@ -13,14 +18,14 @@ st.set_page_config(
 st.cache_data(ttl=120)
 def get_all_cases():
     """Fetch all cases from the database"""
-    response = requests.get("http://localhost:5000/cases/all")
+    response = requests.get(f"{LOCALHOST_URI}/cases/all")
     return response.json()
 
 st.cache_data(ttl=40)
 def get_selected_case(case_id):
     """Fetch all cases from the database"""
     try:
-        response = requests.get(f"http://localhost:5000/cases/caseID/{case_id}")
+        response = requests.get(f"{LOCALHOST_URI}/cases/caseID/{case_id}")
         return response.json()
     except Exception as e:
         st.error(f"Error loading case: {e}")
@@ -28,13 +33,13 @@ def get_selected_case(case_id):
     
 def update_case(id, data):
     """Update case details in the database"""
-    response = requests.put(f"http://localhost:5000/cases/{id}", json=data)
+    response = requests.put(f"{LOCALHOST_URI}/cases/{id}", json=data)
     return response
 
 def get_person(person_id):
     """Fetch person details from the database"""
     try:
-        response = requests.get(f"http://localhost:5000/people/{person_id}")
+        response = requests.get(f"{LOCALHOST_URI}/people/{person_id}")
         return response.json()
     except Exception as e:
         st.error(f"Error loading person: {e}")
@@ -43,7 +48,7 @@ def get_person(person_id):
 def get_evidence(evidence_id):
     """Fetch evidence details from the database"""
     try:
-        response = requests.get(f"http://localhost:5000/evidence/{evidence_id}")
+        response = requests.get(f"{LOCALHOST_URI}/evidence/{evidence_id}")
         return response.json()
     except Exception as e:
         st.error(f"Error loading evidence: {e}")
@@ -52,7 +57,7 @@ def get_evidence(evidence_id):
 def download_evidence(evidence_id):
     """Download evidence file from the database"""
     try:
-        response = requests.get(f"http://localhost:5000/evidence/download/{evidence_id}")
+        response = requests.get(f"{LOCALHOST_URI}/evidence/download/{evidence_id}")
         return response.content
     except Exception as e:
         st.error(f"Error downloading evidence: {e}")
@@ -67,7 +72,7 @@ def upload_evidence(uploaded_file, description):
 
         files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
         data = {"description": description}
-        response = requests.post("http://localhost:5000/evidence/", files=files, data=data)
+        response = requests.post(f"{LOCALHOST_URI}/evidence/", files=files, data=data)
 
         if response.status_code == 201:
             return response.json()  # Successfully uploaded
@@ -277,8 +282,8 @@ def show_case_detail():
                         st.rerun()
                     else:
                         st.error("Error updating case with new evidence.")
-            else:
-                st.error("Error uploading evidence.")
+            # else:
+            #     st.error("Error uploading evidence.")
 
     # You could also add an expander or additional tabs for "History", "Events", or "Notes".
     st.divider()

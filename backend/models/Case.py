@@ -106,9 +106,15 @@ class Case:
     def update(cls, case_id, data):
         cls.initialize()
         try:
-            result = cls.case_collection.update_one(
-                {"_id": ObjectId(case_id)}, {"$set": data}
-            )
+            # If data already contains an operator (e.g. "$push"), use it directly.
+            if any(key.startswith("$") for key in data.keys()):
+                result = cls.case_collection.update_one(
+                    {"_id": ObjectId(case_id)}, data
+                )
+            else:
+                result = cls.case_collection.update_one(
+                    {"_id": ObjectId(case_id)}, {"$set": data}
+                )
             return result
         except Exception as e:
             print(e)
