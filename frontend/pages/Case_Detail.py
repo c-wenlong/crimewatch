@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from utils.db_connector import get_database_connection
+from utils.semantic_chunking import process_text_and_chunk
 import requests
 import datetime
 import dotenv
@@ -278,12 +279,48 @@ def show_case_detail():
                     update_response = update_case(str(case["_id"]['$oid']), {"evidence": evidence_list})
                     if update_response.status_code == 200:
                         st.success("File uploaded and case updated successfully!")
-                        # Refresh the page to show new evidence
-                        st.rerun()
-                    else:
-                        st.error("Error updating case with new evidence.")
-            # else:
-            #     st.error("Error uploading evidence.")
+
+                        # Now retrieve the newly uploaded evidence and process semantic chunking
+                        new_evidence_id = evidence_response['evidence_id']
+                        new_evidence_object = get_evidence(new_evidence_id)
+                        binary_content = new_evidence_object.get("extracted_content")
+                        text_content = None
+                        
+                        if isinstance(binary_content, bytes):
+                            try:
+                                text_content = binary_content.decode("utf-8")
+                                print("Successfully decoded binary content to text")
+                            except UnicodeDecodeError:
+                                # Try different encodings if utf-8 fails
+                                try:
+                                    text_content = binary_content.decode("latin-1")
+                                    print("Successfully decoded binary content using latin-1")
+                                except Exception as e:
+                                    print(f"Error decoding binary content: {e}")
+                        else:
+                            text_content = binary_content
+                            print("Content is already in a readable format:", text_content[:100] + "..." if text_content and len(text_content) > 100 else text_content)
+                        
+                        if not text_content:
+                            st.error("Could not retrieve the text from the new evidence.")
+                        else:
+                            chunks = process_text_and_chunk(text_content)
+                            if not chunks:
+                                st.error("Semantic chunking did not create any chunks.")
+                            else:
+                                pinecone_payload = {
+                                    "description": new_evidence_object.get("description", ""),
+                                    "filename": new_evidence_object.get("filename", ""),
+                                    "filepath": new_evidence_object.get("filepath", "/placeholder/filepath/"),
+                                    "extracted_content": text_content,
+                                    "chunks": [chunk.page_content if hasattr(chunk, "page_content") else chunk for chunk in chunks]
+                                }
+                                pinecone_response = requests.post(f"{LOCALHOST_URI}/pinecone_evidence/{new_evidence_id}", json=pinecone_payload)
+                                if pinecone_response.status_code in [200, 201]:
+                                    st.success("Evidence successfully processed and indexed in semantic search!")
+                                    st.rerun()
+                                else:
+                                    st.error(f"Error indexing in Pinecone: {pinecone_response.status_code}")
 
     # You could also add an expander or additional tabs for "History", "Events", or "Notes".
     st.divider()
