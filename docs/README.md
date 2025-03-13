@@ -17,9 +17,8 @@ CrimeWatch is a crime analysis and reporting system designed to assist law enfor
 ## Tech Stack
 
 - **Backend**: Flask, MongoDB, OpenAI API
-- **Frontend**: React Native (Expo)
-- **Database**: MongoDB
-- **Cloud Services**: AWS/GCP for hosting (if applicable)
+- **Frontend**: Streamlit (Python)
+- **Database**: MongoDB, Pinecone DB
 
 ## Installation
 
@@ -27,9 +26,7 @@ CrimeWatch is a crime analysis and reporting system designed to assist law enfor
 
 Ensure you have the following installed:
 
-- Python 3.10+
-- Node.js & npm
-- MongoDB
+- Python 3.12+
 
 ### Backend Setup
 
@@ -63,11 +60,13 @@ Ensure you have the following installed:
    ```
 2. Install dependencies:
    ```sh
-   npm install
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
    ```
-3. Start the Expo server:
+3. Start the Streamlit server:
    ```sh
-   npm start
+   streamlit run Dashboard.py
    ```
 
 ## API Endpoints
@@ -85,6 +84,8 @@ Ensure you have the following installed:
 ### AI Insights
 
 - `POST /chatgpt/` - Generate case summaries and insights
+
+More API docs can be found under `docs/` folder.
 
 ## Contributing
 
