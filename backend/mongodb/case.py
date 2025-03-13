@@ -74,6 +74,6 @@ def update_case(case_id):
     data = request.json
     result = Case.update(case_id, data)
 
-    if result.modified_count > 0:
+    if result and result.modified_count > 0:
         return jsonify({"message": "Case updated"}), 200
     return jsonify({"error": "Case not found"}), 404
